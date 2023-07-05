@@ -4,23 +4,26 @@ public class CustomObserver : MonoBehaviour
 {
     public static CustomObserver Default;
 
-    public string consonant = string.Empty;
-    public float timer = 0;
+    [HideInInspector] public string consonant = string.Empty;
+    [HideInInspector] public float timer = 0;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Setup()
     {
+        var go = new GameObject("Custom Observer");
+        var component = go.AddComponent<CustomObserver>();
 
+        Default = component;
+        DontDestroyOnLoad(go);
     }
 
-    void Awake()
-    {
-        Default = this;
-    }
-
-    public void Settings(string consonant, float timer)
+    public void SetConsonant(string consonant)
     {
         this.consonant = consonant;
+    }
+
+    public void SetTimer(float timer)
+    {
         this.timer = timer;
     }
 }
