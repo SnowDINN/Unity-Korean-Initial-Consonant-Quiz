@@ -6,6 +6,7 @@ public class CustomObserver : MonoBehaviour
 
     [HideInInspector] public string consonant = string.Empty;
     [HideInInspector] public float timer = 0;
+    [HideInInspector] public float index = 0;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Setup()
@@ -25,5 +26,10 @@ public class CustomObserver : MonoBehaviour
     public void SetTimer(float timer)
     {
         this.timer = timer;
+    }
+
+    public void SetIndex(float index)
+    {
+        this.index = index;
     }
 }

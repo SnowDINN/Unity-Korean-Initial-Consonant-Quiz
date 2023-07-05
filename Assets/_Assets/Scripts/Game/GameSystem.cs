@@ -42,6 +42,7 @@ public class GameSystem : MonoBehaviour
 
     List<string> save = new List<string>();
     bool isPause = false;
+    int index = 0;
 
     string chosung = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
     string jungsung = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
@@ -96,13 +97,19 @@ public class GameSystem : MonoBehaviour
                     return;
                 }
 
-                isPause = false;
-                uiSlider.value = CustomObserver.Default.timer;
-
                 uiInputAnswer.text = string.Empty;
                 uiInputAnswer.ActivateInputField();
 
                 save.Add(evt);
+
+                index += 1;
+                if (index == CustomObserver.Default.index)
+                {
+                    isPause = false;
+                    uiSlider.value = CustomObserver.Default.timer;
+
+                    index = 0;
+                }
             }));
         });
 
