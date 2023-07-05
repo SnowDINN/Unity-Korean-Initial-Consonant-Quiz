@@ -18,22 +18,29 @@ public class MainSystem : MonoBehaviour
 
         uiInputConsnant.onValueChanged.AddListener(evt =>
         {
-            CustomObserver.Default.SetConsonant(evt);
+            if (!string.IsNullOrEmpty(evt))
+                CustomObserver.Default.SetConsonant(evt);
         });
 
         uiInputTimer.onValueChanged.AddListener(evt =>
         {
-            CustomObserver.Default.SetTimer(Convert.ToInt32(evt));
+            int isInteger = 0;
+            if (int.TryParse(evt, out isInteger))
+                CustomObserver.Default.SetTimer(isInteger);
+            else
+                uiInputTimer.text = string.Empty;
         });
 
         uiInputConsnant.onSubmit.AddListener(evt =>
         {
-            SceneManager.LoadSceneAsync(1);
+            if (!string.IsNullOrEmpty(CustomObserver.Default.consonant) && CustomObserver.Default.timer > 0)
+                SceneManager.LoadSceneAsync(1);
         });
 
         uiInputTimer.onSubmit.AddListener(evt =>
         {
-            SceneManager.LoadSceneAsync(1);
+            if (!string.IsNullOrEmpty(CustomObserver.Default.consonant) && CustomObserver.Default.timer > 0)
+                SceneManager.LoadSceneAsync(1);
         });
     }
 }

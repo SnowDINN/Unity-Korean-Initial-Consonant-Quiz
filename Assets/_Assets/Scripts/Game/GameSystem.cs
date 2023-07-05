@@ -60,6 +60,12 @@ public class GameSystem : MonoBehaviour
         uiSlider.maxValue = CustomObserver.Default.timer;
         uiSlider.value = CustomObserver.Default.timer;
 
+        uiInputAnswer.onValueChanged.AddListener(evt =>
+        {
+            if (evt.Contains(" "))
+                uiInputAnswer.text = uiInputAnswer.text.Replace(" ", "");
+        });
+
         uiInputAnswer.onSubmit.AddListener(evt =>
         {
             var Chosung = "";
