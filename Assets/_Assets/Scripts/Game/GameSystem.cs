@@ -43,6 +43,13 @@ public class GameSystem : MonoBehaviour
     List<string> save = new List<string>();
     bool isPause = false;
 
+    string chosung = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+    string jungsung = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
+    string jongsung = " ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ";
+
+    ushort UnicodeHangeulBase = 0xAC00;
+    ushort UnicodeHangeulLast = 0xD79F;
+
     void Awake()
     {
         var placeholder = uiInputAnswer.placeholder.GetComponent<TextMeshProUGUI>();
@@ -53,10 +60,18 @@ public class GameSystem : MonoBehaviour
 
         uiInputAnswer.onSubmit.AddListener(evt =>
         {
-            if (evt == " ")
-                return;
+            var Chosung = "";
+            for (int i = 0; i < evt.Length; i++)
+                Chosung += Divide(evt[i]);
 
             isPause = true;
+            if (Chosung != CustomObserver.Default.consonant)
+            {
+                uiObjectFailed.SetActive(true);
+                uiTextFailed.text = "초성틀림!";
+                return;
+            }
+
             if (save.Contains(evt))
             {
                 uiObjectFailed.SetActive(true);
@@ -135,5 +150,29 @@ public class GameSystem : MonoBehaviour
                 }
             }
         }
+    }
+
+    char Divide(char c)
+    {
+        ushort check = Convert.ToUInt16(c);
+
+        if (check > UnicodeHangeulLast || check < UnicodeHangeulBase)
+            return default;
+
+        var Code = check - UnicodeHangeulBase;
+
+        var JongsungCode = Code % 28; // 종성 코드 분리
+        Code = (Code - JongsungCode) / 28;
+
+        var JungsungCode = Code % 21; // 중성 코드 분리
+        Code = (Code - JungsungCode) / 21;
+
+        var ChosungCode = Code;
+
+        var Chosung = chosung[ChosungCode];
+        var Jungsung = jungsung[JungsungCode];
+        var Jongsung = jongsung[JongsungCode];
+
+        return Chosung;
     }
 }
