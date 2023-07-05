@@ -52,6 +52,8 @@ public class GameSystem : MonoBehaviour
 
     void Awake()
     {
+        uiInputAnswer.ActivateInputField();
+
         var placeholder = uiInputAnswer.placeholder.GetComponent<TextMeshProUGUI>();
         placeholder.text = CustomObserver.Default.consonant;
 
