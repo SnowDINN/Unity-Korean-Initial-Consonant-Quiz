@@ -1,8 +1,8 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using TMPro;
 using UniRx;
 using UnityEngine;
@@ -73,7 +73,9 @@ public class GameSystem : MonoBehaviour
             for (int i = 0; i < evt.Length; i++)
                 Chosung += Divide(evt[i]);
 
-            isPause = true;
+            if (index == CustomObserver.Default.index)
+                isPause = true;
+
             if (Chosung != CustomObserver.Default.consonant)
             {
                 uiObjectFailed.SetActive(true);
