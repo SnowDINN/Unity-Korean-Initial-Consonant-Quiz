@@ -33,15 +33,15 @@ public class GameSystem : MonoBehaviour
     private const ushort UnicodeHangeulBase = 0xAC00;
     private const ushort UnicodeHangeulLast = 0xD79F;
 
-    [Header("main system")]
-    [SerializeField] private TMP_InputField uiInputAnswer;
+    [Header("main system")] [SerializeField]
+    private TMP_InputField uiInputAnswer;
+
     [SerializeField] private TextMeshProUGUI uiInputDescription;
 
-    [Header("Timer")]
-    [SerializeField] private Slider uiSlider;
+    [Header("Timer")] [SerializeField] private Slider uiSlider;
 
-    [Header("Failed")]
-    [SerializeField] private GameObject uiObjectFailed;
+    [Header("Failed")] [SerializeField] private GameObject uiObjectFailed;
+
     [SerializeField] private TextMeshProUGUI uiTextFailed;
 
     private readonly List<Coroutine> coroutines = new();
@@ -86,7 +86,7 @@ public class GameSystem : MonoBehaviour
                     failed("없는단어");
                     return;
                 }
-                
+
                 uiSlider.value = CustomObserver.Default.timer;
 
                 uiInputAnswer.text = string.Empty;
@@ -102,8 +102,8 @@ public class GameSystem : MonoBehaviour
                 failed("시간초과");
         });
 
-       coroutines.Add(StartCoroutine(countdownAsync()));
-       coroutines.Add(StartCoroutine(inputEventAsync()));
+        coroutines.Add(StartCoroutine(countdownAsync()));
+        coroutines.Add(StartCoroutine(inputEventAsync()));
     }
 
     private void OnDestroy()
@@ -115,8 +115,7 @@ public class GameSystem : MonoBehaviour
     private IEnumerator dictionaryEqualWebRequest(Action<bool> callback)
     {
         var uri =
-            "https://stdict.korean.go.kr/api/search.do?certkey_no=5612&key=4B61E0D864088786949BAE7A68F5AE52&type_search=search&req_type=json&q=" +
-            uiInputAnswer.text;
+            "https://stdict.korean.go.kr/api/" + "토큰 연결" + uiInputAnswer.text;
         using var www = UnityWebRequest.Get(uri);
         yield return www.SendWebRequest();
 
@@ -153,8 +152,8 @@ public class GameSystem : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.Space))
                 isPause = !isPause;
-            
-            yield return null;   
+
+            yield return null;
         }
     }
 
