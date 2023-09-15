@@ -1,10 +1,10 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using TMPro;
-using UniRx;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -12,13 +12,11 @@ using UnityEngine.UI;
 
 public class KoreanDictionary
 {
-    public int total;
     public Korean[] item;
 }
 
 public class Korean
 {
-    public string word;
     public Description sense;
 }
 
@@ -30,28 +28,27 @@ public class Description
 
 public class GameSystem : MonoBehaviour
 {
-    [SerializeField] TMP_InputField uiInputAnswer;
-    [SerializeField] TextMeshProUGUI uiInputDescription;
+    private const string chosung = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+
+    private const ushort UnicodeHangeulBase = 0xAC00;
+    private const ushort UnicodeHangeulLast = 0xD79F;
+
+    [Header("main system")]
+    [SerializeField] private TMP_InputField uiInputAnswer;
+    [SerializeField] private TextMeshProUGUI uiInputDescription;
 
     [Header("Timer")]
-    [SerializeField] Slider uiSlider;
+    [SerializeField] private Slider uiSlider;
 
     [Header("Failed")]
-    [SerializeField] GameObject uiObjectFailed;
-    [SerializeField] TextMeshProUGUI uiTextFailed;
+    [SerializeField] private GameObject uiObjectFailed;
+    [SerializeField] private TextMeshProUGUI uiTextFailed;
 
-    List<string> save = new List<string>();
-    bool isPause = false;
-    int index = 0;
+    private readonly List<Coroutine> coroutines = new();
+    private readonly List<string> save = new();
+    private bool isPause;
 
-    string chosung = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
-    string jungsung = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
-    string jongsung = " ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ";
-
-    ushort UnicodeHangeulBase = 0xAC00;
-    ushort UnicodeHangeulLast = 0xD79F;
-
-    void Awake()
+    private void Awake()
     {
         uiInputAnswer.ActivateInputField();
 
@@ -69,127 +66,132 @@ public class GameSystem : MonoBehaviour
 
         uiInputAnswer.onSubmit.AddListener(evt =>
         {
-            var Chosung = "";
-            for (int i = 0; i < evt.Length; i++)
-                Chosung += Divide(evt[i]);
-
-            if (index == CustomObserver.Default.index)
-                isPause = true;
-
+            var Chosung = evt.Aggregate("", (current, t) => current + divide(t));
             if (Chosung != CustomObserver.Default.consonant)
             {
-                uiObjectFailed.SetActive(true);
-                uiTextFailed.text = "초성틀림!";
+                failed("초성틀림");
                 return;
             }
 
             if (save.Contains(evt))
             {
-                uiObjectFailed.SetActive(true);
-                uiTextFailed.text = "중복단어!";
+                failed("중복단어");
                 return;
             }
 
-            StartCoroutine(LoadData(exist =>
+            StartCoroutine(dictionaryEqualWebRequest(exist =>
             {
                 if (!exist)
                 {
-                    uiObjectFailed.SetActive(true);
-                    uiTextFailed.text = "없는단어!";
+                    failed("없는단어");
                     return;
                 }
+                
+                uiSlider.value = CustomObserver.Default.timer;
 
                 uiInputAnswer.text = string.Empty;
                 uiInputAnswer.ActivateInputField();
 
                 save.Add(evt);
-
-                index += 1;
-                if (index == CustomObserver.Default.index)
-                {
-                    isPause = false;
-                    uiSlider.value = CustomObserver.Default.timer;
-
-                    index = 0;
-                }
             }));
         });
 
         uiSlider.onValueChanged.AddListener(evt =>
         {
             if (evt <= 0)
-            {
-                uiObjectFailed.SetActive(true);
-                uiTextFailed.text = "시간초과!";
-
-                isPause = true;
-            }
+                failed("시간초과");
         });
 
-        Observable.EveryUpdate().Subscribe(_ =>
+       coroutines.Add(StartCoroutine(countdownAsync()));
+       coroutines.Add(StartCoroutine(inputEventAsync()));
+    }
+
+    private void OnDestroy()
+    {
+        foreach (var coroutine in coroutines.Where(coroutine => coroutine != null))
+            StopCoroutine(coroutine);
+    }
+
+    private IEnumerator dictionaryEqualWebRequest(Action<bool> callback)
+    {
+        var uri =
+            "https://stdict.korean.go.kr/api/search.do?certkey_no=5612&key=4B61E0D864088786949BAE7A68F5AE52&type_search=search&req_type=json&q=" +
+            uiInputAnswer.text;
+        using var www = UnityWebRequest.Get(uri);
+        yield return www.SendWebRequest();
+
+        if (www.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.ProtocolError)
+        {
+            StartCoroutine(dictionaryEqualWebRequest(callback));
+        }
+        else
+        {
+            if (www.isDone)
+            {
+                if (string.IsNullOrEmpty(www.downloadHandler.text))
+                {
+                    callback(false);
+                    yield break;
+                }
+
+                var jObject = JObject.Parse(www.downloadHandler.text);
+                var jObjectValue = $"{jObject["channel"]}";
+                var result = JsonConvert.DeserializeObject<KoreanDictionary>(jObjectValue);
+                callback(true);
+
+                uiInputDescription.text = result.item[0].sense.definition;
+            }
+        }
+    }
+
+    private IEnumerator countdownAsync()
+    {
+        while (uiSlider.value > 0)
         {
             if (!isPause)
                 uiSlider.value -= Time.deltaTime;
 
             if (Input.GetKeyDown(KeyCode.Space))
                 isPause = !isPause;
-
-            if (Input.GetKeyDown(KeyCode.Escape))
-                SceneManager.LoadSceneAsync(0);
-        }).AddTo(gameObject);
-    }
-
-    IEnumerator LoadData(Action<bool> callback)
-    {
-        var uri = "https://stdict.korean.go.kr/api/search.do?certkey_no=5612&key=4B61E0D864088786949BAE7A68F5AE52&type_search=search&req_type=json&q=" + uiInputAnswer.text;
-        using (UnityWebRequest www = UnityWebRequest.Get(uri))
-        {
-            yield return www.SendWebRequest();
-
-            if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
-                StartCoroutine(LoadData(callback));
-            else
-            {
-                if (www.isDone)
-                {
-                    if (string.IsNullOrEmpty(www.downloadHandler.text))
-                    {
-                        callback(false);
-                        yield break;
-                    }
-
-                    var jObject = JObject.Parse(www.downloadHandler.text);
-                    var jObjectValue = $"{jObject["channel"]}";
-                    var result = JsonConvert.DeserializeObject<KoreanDictionary>(jObjectValue);
-                    callback(true);
-
-                    uiInputDescription.text = result.item[0].sense.definition;
-                }
-            }
+            
+            yield return null;   
         }
     }
 
-    char Divide(char c)
+    private IEnumerator inputEventAsync()
     {
-        ushort check = Convert.ToUInt16(c);
+        while (SceneManager.GetActiveScene().buildIndex == 1)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+                SceneManager.LoadSceneAsync(0);
 
-        if (check > UnicodeHangeulLast || check < UnicodeHangeulBase)
+            yield return null;
+        }
+    }
+
+    private char divide(char c)
+    {
+        var check = Convert.ToUInt16(c);
+        if (check is > UnicodeHangeulLast or < UnicodeHangeulBase)
             return default;
 
         var Code = check - UnicodeHangeulBase;
 
-        var JongsungCode = Code % 28; // 종성 코드 분리
+        var JongsungCode = Code % 28;
         Code = (Code - JongsungCode) / 28;
 
-        var JungsungCode = Code % 21; // 중성 코드 분리
+        var JungsungCode = Code % 21;
         Code = (Code - JungsungCode) / 21;
 
         var ChosungCode = Code;
-
         var Chosung = chosung[ChosungCode];
-        var Jungsung = jungsung[JungsungCode];
-        var Jongsung = jongsung[JongsungCode];
-
         return Chosung;
+    }
+
+    private void failed(string message)
+    {
+        uiObjectFailed.SetActive(true);
+        uiTextFailed.text = message;
+        isPause = true;
     }
 }

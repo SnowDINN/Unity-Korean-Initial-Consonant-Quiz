@@ -6,10 +6,9 @@ public class CustomObserver : MonoBehaviour
 
     [HideInInspector] public string consonant = string.Empty;
     [HideInInspector] public float timer = 0;
-    [HideInInspector] public float index = 1;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void Setup()
+    private static void Setup()
     {
         var go = new GameObject("Custom Observer");
         var component = go.AddComponent<CustomObserver>();
@@ -26,10 +25,5 @@ public class CustomObserver : MonoBehaviour
     public void SetTimer(float timer)
     {
         this.timer = timer;
-    }
-
-    public void SetIndex(float index)
-    {
-        this.index = index;
     }
 }
