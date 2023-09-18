@@ -1,12 +1,12 @@
-# 초성 퀴즈
-초성 퀴즈 데모 버전입니다.  
-국립국어원 표준국어 대사전 API 연동이 가능하며, 토큰은 직접 발급받아야 합니다.
+# Introduce
+This is the Korean initial consonant quiz demo version.  
+The API of the National Institute of Korean Language's standard dictionary can be linked, and tokens must be issued directly.
 
-## 기능
-* 초성 입력
-* 카운트다운 입력
+## Included Features
+* Set initial consonants
+* Set Countdown
+* Enter your answer
 
-# 시스템
-* 초성 비교 시스템
-* 카운트다운 시스템
-* API 데이터 비교 및 출력 시스템
+## Included Systems
+* Initial consonant comparison System
+* API Data Comparison and Output System
